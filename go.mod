@@ -1,4 +1,4 @@
-module little-dairy-measurement-service
+module little-diary-measurement-service
 
 go 1.14
 
