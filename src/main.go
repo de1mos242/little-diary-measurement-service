@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 	"gopkg.in/gormigrate.v1"
 	"little-diary-measurement-service/src/config"
+	_ "little-diary-measurement-service/src/docs"
 	"little-diary-measurement-service/src/migrations"
 	"little-diary-measurement-service/src/router"
 )
@@ -24,6 +27,7 @@ func main() {
 	}
 
 	r := router.GetMainEngine()
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	config.Config.DB, config.Config.DBErr = gorm.Open("postgres", config.Config.DSN)
 	if config.Config.DBErr != nil {

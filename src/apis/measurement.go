@@ -8,6 +8,12 @@ import (
 	"net/http"
 )
 
+// GetMeasurement godoc
+// @Summary Retrieves measurement based on given UUID
+// @Produce json
+// @Param uuid path string true "Measurement UUID" format(uuid)
+// @Success 200 {object} models.Measurement
+// @Router /measurement/{uuid} [get]
 func GetMeasurement(c *gin.Context) {
 	s := services.NewMeasurementService(daos.NewMeasurementDAO())
 	uuid := c.Param("uuid")
