@@ -21,3 +21,17 @@ func (dao *MeasurementDAO) GetByMeasurementUuid(measurementUuid models.Measureme
 
 	return &measurement, err
 }
+
+func (dao *MeasurementDAO) SaveMeasurement(measurement *models.Measurement) error {
+	return config.Config.DB.Save(measurement).Error
+}
+
+func (dao *MeasurementDAO) GetMeasurementsByTargetUuid(targetUuid models.TargetUUID) ([]*models.Measurement, error) {
+	var measurements []*models.Measurement
+	err := config.Config.DB.
+		Where("target_uuid = ?", targetUuid).
+		Order("measurement_date ASC").
+		Find(&measurements).
+		Error
+	return measurements, err
+}

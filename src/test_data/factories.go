@@ -18,7 +18,7 @@ var MeasurementFactory = factory.NewFactory(&models.Measurement{}).
 		return models.TargetUUID(fmt.Sprintf("%s", uuid.New())), nil
 	}).
 	Attr("Type", func(args factory.Args) (interface{}, error) {
-		return models.MAESUREMENT_TYPE_HEIGHT, nil
+		return models.MeasurementTypeHeight, nil
 	}).
 	Attr("Value", func(args factory.Args) (interface{}, error) {
 		return rand.Float32() * 100, nil
@@ -35,7 +35,7 @@ var MeasurementStoredFactory = factory.NewFactory(&models.Measurement{}).
 		return models.TargetUUID(fmt.Sprintf("%s", uuid.New())), nil
 	}).
 	Attr("Type", func(args factory.Args) (interface{}, error) {
-		return models.MAESUREMENT_TYPE_HEIGHT, nil
+		return models.MeasurementTypeHeight, nil
 	}).
 	Attr("Value", func(args factory.Args) (interface{}, error) {
 		return rand.Float32() * 100, nil

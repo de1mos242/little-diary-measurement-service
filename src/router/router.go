@@ -14,6 +14,9 @@ func GetMainEngine() *gin.Engine {
 	{
 		//v1.Use(auth())
 		v1.GET("/measurement/:uuid", apis.GetMeasurement)
+		v1.PUT("/measurement/:uuid", apis.SaveMeasurement)
+
+		v1.GET("/measurements", apis.GetMeasurementsByTarget)
 	}
 	return r
 }
