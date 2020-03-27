@@ -19,7 +19,7 @@ func LoadConfig(configPaths ...string) error {
 	v := viper.New()
 	v.SetConfigName("server")
 	v.SetConfigType("yaml")
-	v.SetEnvPrefix("measurement_service_")
+	v.SetEnvPrefix("measurement_service")
 	v.AutomaticEnv()
 
 	v.SetDefault("server_port", 8080)
