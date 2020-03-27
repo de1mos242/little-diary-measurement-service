@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:12.2-alpine
+    ports:
+      - "43001:5432"
+    environment:
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_DB: measurements_db
+    logging:
+      options:
+        max-size: 500m

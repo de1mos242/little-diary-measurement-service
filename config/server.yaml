@@ -1,0 +1,1 @@
+dsn: "postgres://postgres:qwerty@localhost:43001/measurements_db?sslmode=disable"
