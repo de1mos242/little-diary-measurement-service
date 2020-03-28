@@ -1,1 +1,7 @@
 dsn: "postgres://postgres:qwerty@localhost:43001/measurements_db?sslmode=disable"
+auth_server_url: "http://localhost:41002"
+family_server_url: "http://localhost:42002"
+auth_server_login_path: "/auth/login"
+auth_server_username: "measurement tech user"
+auth_server_password: "mkop"
+auth_server_jwt_public: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAro1sbZ6uzi80J5esSkLC\nmpKt7aG4M7ol39nbscvX0Li3WixXY7x8xbv9t3rtWj1gAnVgZHI/BNUw70IPs09y\nETA/ZG13Ucj2nnYNRDFkX1ahxLjV17zMZaYQkWdXyXM5qH/X8nmDYARJrOVoSy8h\nyQqkcNf38qXbnQu7Xtp3isPHVRpUj7zh1AYPgYTAV8BOpq8lOToi/e5FmKS1ygJ1\nLmF9lm9LXjk2uLkj5Y7z8jozG86c8UJ9UA2h9ZRuu4uB09mZL7NXgkWd0XyV7sUD\nUckQmTGf1cxeoRLZBxz7Og9dGgVja1AdzOxEZvrbhzH2piKpGg19rOjVnb8Ssj5N\ngwIDAQAB\n-----END PUBLIC KEY-----"

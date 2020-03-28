@@ -4,15 +4,42 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
+	"strings"
 )
 
 var Config appConfig
 
 type appConfig struct {
-	DB         *gorm.DB
-	DBErr      error
-	ServerPort int    `mapstructure:"server_port"`
-	DSN        string `mapstructure:"dsn"`
+	DB                     *gorm.DB
+	DBErr                  error
+	ServerPort             int    `mapstructure:"server_port"`
+	DSN                    string `mapstructure:"dsn"`
+	AuthServerUrl          string `mapstructure:"auth_server_url"`
+	FamilyServerUrl        string `mapstructure:"family_server_url"`
+	AuthServerLoginPath    string `mapstructure:"auth_server_login_path"`
+	AuthServerUsername     string `mapstructure:"auth_server_username"`
+	AuthServerPassword     string `mapstructure:"auth_server_password"`
+	AuthServerJwtPublicKey string `mapstructure:"auth_server_jwt_public"`
+}
+
+func (a *appConfig) GetAuthServerUrl() string {
+	return a.AuthServerUrl
+}
+
+func (a *appConfig) GetAuthServerLoginPath() string {
+	return a.AuthServerLoginPath
+}
+
+func (a *appConfig) GetAuthServerUsername() string {
+	return a.AuthServerUsername
+}
+
+func (a *appConfig) GetAuthServerPassword() string {
+	return a.AuthServerPassword
+}
+
+func (a *appConfig) GetAuthServerJwtPublicKey() string {
+	return strings.ReplaceAll(a.AuthServerJwtPublicKey, "\\n", "\n")
 }
 
 func LoadConfig(configPaths ...string) error {
