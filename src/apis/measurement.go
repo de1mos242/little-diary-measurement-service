@@ -13,6 +13,7 @@ import (
 
 // GetMeasurement godoc
 // @Summary Retrieves measurement based on given UUID
+// @Security ApiKeyAuth
 // @Produce json
 // @Param uuid path string true "Measurement UUID" format(uuid)
 // @Success 200 {object} dto.MeasurementResponse
@@ -35,6 +36,7 @@ func GetMeasurement(c *gin.Context, locator *common.ServiceLocator) {
 
 // GetMeasurementsByTarget godoc
 // @Summary Retrieves measurements based on given target UUID
+// @Security ApiKeyAuth
 // @Produce json
 // @Param target-uuid query string true "Target UUID" format(uuid)
 // @Success 200 {array} dto.MeasurementResponse
@@ -61,6 +63,7 @@ func GetMeasurementsByTarget(c *gin.Context, locator *common.ServiceLocator) {
 
 // SaveMeasurement godoc
 // @Summary Create or update measurement
+// @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param uuid path string true "Measurement UUID" format(uuid)

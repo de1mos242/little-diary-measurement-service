@@ -48,6 +48,9 @@ func (f *FamilyIntegration) CheckUserHasAccessToBaby(userUuid string, targetUuid
 	}
 	if response.StatusCode != http.StatusOK {
 		textData, _ := ioutil.ReadAll(response.Body)
+		if response.StatusCode == http.StatusNotFound {
+			return false, nil
+		}
 		return false, fmt.Errorf("check access error from family server %d: %s", response.StatusCode, textData)
 	}
 

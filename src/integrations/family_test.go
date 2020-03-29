@@ -80,6 +80,33 @@ func TestFamilyIntegration_CheckUserHasAccessToBaby(t *testing.T) {
 			want:    false,
 			wantErr: false,
 		},
+		{
+			name: "Test target not found",
+			fields: fields{
+				Client: func() HttpClient {
+					mockObj := new(test_data.MockHttpClient)
+					mockObj.On("Do", mock.Anything).
+						Return(test_data.MakeHttpResponse(404, &CheckAccessResponseDto{HasAccess: false}), nil)
+					return mockObj
+				}(),
+				Config: func() FamilyServerConfig {
+					mockObj := test_data.MockFamilyServerConfig{}
+					mockObj.On("GetFamilyServerUrl").Return("https://family.little-diary.net")
+					return &mockObj
+				}(),
+				AuthService: func() AuthService {
+					mockObj := test_data.MockAuthService{}
+					mockObj.On("GetAccessToken", mock.Anything).Return("fake_token", nil)
+					return &mockObj
+				}(),
+			},
+			args: args{
+				userUuid:   "74822532-56e4-4ff0-8890-3247a17433cc",
+				targetUuid: "11111111-3333-412d-ade7-47be43827d68",
+			},
+			want:    false,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -22,6 +22,10 @@ import (
 // @contact.name Denis Yakovlev
 // @contact.email de1m0s242@gmail.com
 
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 // @BasePath /api/v1
 func main() {
 
