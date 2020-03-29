@@ -13,10 +13,6 @@ import (
 	"time"
 )
 
-type HttpClient interface {
-	Do(request *http.Request) (*http.Response, error)
-}
-
 type AuthServerConfig interface {
 	GetAuthServerUrl() string
 	GetAuthServerLoginPath() string
@@ -26,31 +22,24 @@ type AuthServerConfig interface {
 }
 
 type AuthIntegration struct {
-	Client HttpClient
-	Config AuthServerConfig
-}
-
-var (
+	Client      HttpClient
+	Config      AuthServerConfig
 	accessToken atomic.Value
 	o           sync.Once
-)
-
-func NewAuthIntegration(client HttpClient, config AuthServerConfig) *AuthIntegration {
-	return &AuthIntegration{Client: client, Config: config}
 }
 
 func (a *AuthIntegration) GetAccessToken() (token string, err error) {
-	o.Do(func() {
-		accessToken.Store("")
+	a.o.Do(func() {
+		a.accessToken.Store("")
 	})
 
-	token = accessToken.Load().(string)
+	token = a.accessToken.Load().(string)
 	if token == "" || a.isTokenExpired(token) {
 		token, err = a.requestToken()
 		if err != nil {
 			return "", err
 		}
-		accessToken.Store(token)
+		a.accessToken.Store(token)
 	}
 	return
 }
@@ -114,7 +103,7 @@ func (a *AuthIntegration) requestToken() (string, error) {
 	}
 	if response.StatusCode != http.StatusOK {
 		textData, _ := ioutil.ReadAll(response.Body)
-		return "", fmt.Errorf("loing error from auth server %d: %s", response.StatusCode, textData)
+		return "", fmt.Errorf("login error from auth server %d: %s", response.StatusCode, textData)
 	}
 
 	var responseDto LoginResponseDto

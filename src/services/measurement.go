@@ -3,7 +3,9 @@ package services
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"little-diary-measurement-service/src/common"
 	"little-diary-measurement-service/src/dto"
+	"little-diary-measurement-service/src/errors"
 	"little-diary-measurement-service/src/models"
 )
 
@@ -14,23 +16,42 @@ type measurementDAO interface {
 }
 
 type MeasurementService struct {
-	dao measurementDAO
+	dao            measurementDAO
+	serviceLocator *common.ServiceLocator
 }
 
-func NewMeasurementService(dao measurementDAO) *MeasurementService {
-	return &MeasurementService{dao}
+func NewMeasurementService(dao measurementDAO, locator *common.ServiceLocator) *MeasurementService {
+	return &MeasurementService{dao, locator}
 }
 
-func (s *MeasurementService) GetByMeasurementUuid(measurementUuid string) (*models.Measurement, error) {
-	return s.dao.GetByMeasurementUuid(models.MeasurementUUID(measurementUuid))
+func (s *MeasurementService) GetByMeasurementUuid(measurementUuid string, userUuid string) (*models.Measurement, error) {
+	measurement, err := s.dao.GetByMeasurementUuid(models.MeasurementUUID(measurementUuid))
+	if err != nil {
+		return nil, err
+	}
+	allowed, err := s.serviceLocator.UserHasAccessToBabyChecker.CheckUserHasAccessToBaby(userUuid, string(measurement.TargetUuid))
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, &errors.ForbiddenError{S: "operation not allowed"}
+	}
+	return measurement, err
 }
 
-func (s *MeasurementService) Save(uuid string, request dto.MeasurementRequest) (*models.Measurement, error) {
+func (s *MeasurementService) Save(uuid string, request dto.MeasurementRequest, userUuid string) (*models.Measurement, error) {
 	err := s.validateMeasurement(request)
 	if err != nil {
 		return nil, err
 	}
 
+	allowed, err := s.serviceLocator.UserHasAccessToBabyChecker.CheckUserHasAccessToBaby(userUuid, request.TargetUuid)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, &errors.ForbiddenError{S: "operation not allowed"}
+	}
 	measurementUUID := models.MeasurementUUID(uuid)
 	measurement, err := s.dao.GetByMeasurementUuid(measurementUUID)
 	if err != nil {
@@ -50,7 +71,14 @@ func (s *MeasurementService) Save(uuid string, request dto.MeasurementRequest) (
 	return measurement, err
 }
 
-func (s *MeasurementService) GetByTargetUuid(targetUuid string) ([]*models.Measurement, error) {
+func (s *MeasurementService) GetByTargetUuid(targetUuid string, userUuid string) ([]*models.Measurement, error) {
+	allowed, err := s.serviceLocator.UserHasAccessToBabyChecker.CheckUserHasAccessToBaby(userUuid, targetUuid)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, &errors.ForbiddenError{S: "operation not allowed"}
+	}
 	return s.dao.GetMeasurementsByTargetUuid(models.TargetUUID(targetUuid))
 }
 

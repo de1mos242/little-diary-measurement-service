@@ -42,6 +42,10 @@ func (a *appConfig) GetAuthServerJwtPublicKey() string {
 	return strings.ReplaceAll(a.AuthServerJwtPublicKey, "\\n", "\n")
 }
 
+func (a *appConfig) GetFamilyServerUrl() string {
+	return a.FamilyServerUrl
+}
+
 func LoadConfig(configPaths ...string) error {
 	v := viper.New()
 	v.SetConfigName("server")
