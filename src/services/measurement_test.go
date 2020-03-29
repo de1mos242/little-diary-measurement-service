@@ -5,7 +5,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"little-diary-measurement-service/src/common"
+	"little-diary-measurement-service/src/config"
 	"little-diary-measurement-service/src/dto"
+	"little-diary-measurement-service/src/integrations"
 	"little-diary-measurement-service/src/models"
 	"little-diary-measurement-service/src/test_data"
 	"reflect"
@@ -57,10 +61,12 @@ func newMockMeasurementDAO() measurementDAO {
 
 func TestMeasurementService_Get(t *testing.T) {
 	type fields struct {
-		dao measurementDAO
+		dao            measurementDAO
+		serviceLocator *common.ServiceLocator
 	}
 	type args struct {
 		measurementUuid string
+		userUuid        string
 	}
 	tests := []struct {
 		name    string
@@ -69,19 +75,73 @@ func TestMeasurementService_Get(t *testing.T) {
 		want    *models.Measurement
 		wantErr bool
 	}{
-		{name: "find existed record", fields: fields{newMockMeasurementDAO()},
-			args: args{string(records[0].Uuid)}, want: records[0]},
-		{name: "find existed record 2", fields: fields{newMockMeasurementDAO()},
-			args: args{string(records[1].Uuid)}, want: records[1]},
-		{name: "find not existed record", fields: fields{newMockMeasurementDAO()},
-			args: args{fmt.Sprintf("%s", uuid.New())}, wantErr: true},
+		{
+			name: "find existed record",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(true, nil)
+						return mockObj
+					}(),
+				}},
+			args: args{measurementUuid: string(records[0].Uuid), userUuid: "any"},
+			want: records[0],
+		},
+		{
+			name: "find existed record 2",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(true, nil)
+						return mockObj
+					}(),
+				}},
+			args: args{measurementUuid: string(records[1].Uuid), userUuid: "any"},
+			want: records[1]},
+		{
+			name: "find not existed record",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(true, nil)
+						return mockObj
+					}(),
+				}},
+			args:    args{measurementUuid: fmt.Sprintf("%s", uuid.New()), userUuid: "any"},
+			wantErr: true,
+		},
+		{
+			name: "test access denied",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(false, nil)
+						return mockObj
+					}(),
+				}},
+			args:    args{measurementUuid: string(records[0].Uuid), userUuid: "any"},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &MeasurementService{
-				dao: tt.fields.dao,
+				dao:            tt.fields.dao,
+				serviceLocator: tt.fields.serviceLocator,
 			}
-			got, err := s.GetByMeasurementUuid(tt.args.measurementUuid)
+			got, err := s.GetByMeasurementUuid(tt.args.measurementUuid, tt.args.userUuid)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetByMeasurementUuid() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -95,7 +155,8 @@ func TestMeasurementService_Get(t *testing.T) {
 
 func TestMeasurementService_validateMeasurement(t *testing.T) {
 	type fields struct {
-		dao measurementDAO
+		dao            measurementDAO
+		serviceLocator *common.ServiceLocator
 	}
 	type args struct {
 		request dto.MeasurementRequest
@@ -114,7 +175,8 @@ func TestMeasurementService_validateMeasurement(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &MeasurementService{
-				dao: tt.fields.dao,
+				dao:            tt.fields.dao,
+				serviceLocator: tt.fields.serviceLocator,
 			}
 			if err := s.validateMeasurement(tt.args.request); (err != nil) != tt.wantErr {
 				t.Errorf("validateMeasurement() error = %v, wantErr %v", err, tt.wantErr)
@@ -127,11 +189,13 @@ func TestMeasurementService_Save(t *testing.T) {
 	randomUuid := fmt.Sprintf("%s", uuid.New())
 	targetUuid := fmt.Sprintf("%s", uuid.New())
 	type fields struct {
-		dao measurementDAO
+		dao            measurementDAO
+		serviceLocator *common.ServiceLocator
 	}
 	type args struct {
-		uuid    string
-		request dto.MeasurementRequest
+		uuid     string
+		request  dto.MeasurementRequest
+		userUuid string
 	}
 	twoHoursBefore := time.Now().Add(time.Hour * -2)
 	tests := []struct {
@@ -141,15 +205,40 @@ func TestMeasurementService_Save(t *testing.T) {
 		want    *models.Measurement
 		wantErr bool
 	}{
-		{name: "test update measurement", fields: fields{dao: newMockMeasurementDAO()}, args: args{uuid: string(records[1].Uuid), request: dto.MeasurementRequest{
-			Type:       "WEIGHT",
-			Timestamp:  twoHoursBefore,
-			Value:      9500,
-			TargetUuid: targetUuid,
-		}}, want: records[1]},
 		{
-			name:   "test create measurement",
-			fields: fields{dao: newMockMeasurementDAO()},
+			name: "test update measurement",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(true, nil)
+						return mockObj
+					}(),
+				}},
+			args: args{
+				uuid: string(records[1].Uuid),
+				request: dto.MeasurementRequest{
+					Type:       "WEIGHT",
+					Timestamp:  twoHoursBefore,
+					Value:      9500,
+					TargetUuid: targetUuid,
+				},
+				userUuid: "any"},
+			want: records[1]},
+		{
+			name: "test create measurement",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(true, nil)
+						return mockObj
+					}(),
+				}},
 			args: args{uuid: randomUuid, request: dto.MeasurementRequest{
 				Type:       "HEIGHT",
 				Timestamp:  twoHoursBefore,
@@ -165,13 +254,34 @@ func TestMeasurementService_Save(t *testing.T) {
 				TargetUuid: models.TargetUUID(targetUuid),
 			},
 		},
+		{
+			name: "test access denied",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(false, nil)
+						return mockObj
+					}(),
+				}},
+			args: args{uuid: randomUuid, request: dto.MeasurementRequest{
+				Type:       "HEIGHT",
+				Timestamp:  twoHoursBefore,
+				Value:      73,
+				TargetUuid: targetUuid,
+			}},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &MeasurementService{
-				dao: tt.fields.dao,
+				dao:            tt.fields.dao,
+				serviceLocator: tt.fields.serviceLocator,
 			}
-			got, err := s.Save(tt.args.uuid, tt.args.request)
+			got, err := s.Save(tt.args.uuid, tt.args.request, tt.args.userUuid)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Save() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -189,10 +299,12 @@ func TestMeasurementService_Save(t *testing.T) {
 
 func TestMeasurementService_GetByTargetUuid(t *testing.T) {
 	type fields struct {
-		dao measurementDAO
+		dao            measurementDAO
+		serviceLocator *common.ServiceLocator
 	}
 	type args struct {
 		targetUuid string
+		userUuid   string
 	}
 	tests := []struct {
 		name    string
@@ -202,18 +314,43 @@ func TestMeasurementService_GetByTargetUuid(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:   "Find by target uuid",
-			fields: fields{newMockMeasurementDAO()},
-			args:   args{tUuid},
-			want:   []*models.Measurement{records[0], records[2]},
+			name: "Find by target uuid",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(true, nil)
+						return mockObj
+					}(),
+				}},
+			args: args{tUuid, "any"},
+			want: []*models.Measurement{records[0], records[2]},
+		},
+		{
+			name: "test access denied",
+			fields: fields{
+				dao: newMockMeasurementDAO(),
+				serviceLocator: &common.ServiceLocator{
+					PublicKeyGetter: &config.Config,
+					UserHasAccessToBabyChecker: func() integrations.UserHasAccessToBabyChecker {
+						mockObj := new(test_data.MockUserHasAccessToBabyChecker)
+						mockObj.On("CheckUserHasAccessToBaby", mock.Anything, mock.Anything).Return(false, nil)
+						return mockObj
+					}(),
+				}},
+			args:    args{tUuid, "any"},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &MeasurementService{
-				dao: tt.fields.dao,
+				dao:            tt.fields.dao,
+				serviceLocator: tt.fields.serviceLocator,
 			}
-			got, err := s.GetByTargetUuid(tt.args.targetUuid)
+			got, err := s.GetByTargetUuid(tt.args.targetUuid, tt.args.userUuid)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetByTargetUuid() error = %v, wantErr %v", err, tt.wantErr)
 				return
