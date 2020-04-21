@@ -14,7 +14,7 @@ import (
 func GetHealth(c *gin.Context) {
 	var measurement models.Measurement
 
-	err := config.Config.DB.First(&measurement).Error
+	err := config.Config.DB.FirstOrInit(&measurement).Error
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
