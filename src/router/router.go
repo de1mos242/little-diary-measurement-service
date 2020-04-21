@@ -29,7 +29,28 @@ func GetMainEngine(locator *common.ServiceLocator) *gin.Engine {
 
 		v1.GET("/measurements", wrapHandler(apis.GetMeasurementsByTarget, locator))
 	}
+
+	status := r.Group("/status")
+	status.GET("/health", apis.GetHealth)
 	return r
+}
+
+func jwtMiddleware(locator *common.ServiceLocator) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Request.Header.Get("Authorization")
+		token = strings.Replace(token, "Bearer ", "", 1)
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization token not provided"})
+		}
+		jwtTokenReader := security.JwtTokenReader{PublicKey: locator.PublicKeyGetter.GetAuthServerJwtPublicKey()}
+		userUuid, err := jwtTokenReader.ReadUserUuid(token)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization token not provided"})
+		}
+
+		c.Set("UserUuid", userUuid)
+		c.Next()
+	}
 }
 
 func jwtMiddleware(locator *common.ServiceLocator) gin.HandlerFunc {
