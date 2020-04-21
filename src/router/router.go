@@ -29,6 +29,10 @@ func GetMainEngine(locator *common.ServiceLocator) *gin.Engine {
 
 		v1.GET("/measurements", wrapHandler(apis.GetMeasurementsByTarget, locator))
 	}
+
+	status := r.Group("/status")
+	status.GET("/health", apis.GetHealth)
+
 	return r
 }
 
