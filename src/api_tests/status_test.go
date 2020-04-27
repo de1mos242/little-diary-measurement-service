@@ -37,5 +37,5 @@ func TestCheckHealth(t *testing.T) {
 
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, w.Code, http.StatusNoContent)
+	assert.Equal(t, w.Code, http.StatusOK)
 }

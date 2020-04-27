@@ -19,5 +19,5 @@ func GetHealth(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 
-	c.Status(http.StatusNoContent)
+	c.Status(http.StatusOK)
 }
