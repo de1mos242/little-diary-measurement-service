@@ -1,9 +1,7 @@
- 
 name: Deploy image
 
 on:
   push:
-    branches: [ master ]
     tags: [v*]
 
 jobs:
@@ -12,9 +10,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Set env
+      run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:11}
     - uses: jerray/publish-docker-action@master
       with:
         username: ${{ secrets.DOCKER_HUB_ID }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
         repository: de1m0s/little-diary-measurement-service
         auto_tag: true
+    - name: Send event to deploy service
+      uses: peter-evans/repository-dispatch@v1
+      with:
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        repository: de1mos242/little-diary-root
+        event-type: measurement-service-released
+        client-payload: '{"version": "${{ env.RELEASE_VERSION }}"}'
